@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 1 — Industry Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --surface: #181714;
+    --surface2: #201e1b;
+    --border: #2e2b27;
+    --gold: #c9a84c;
+    --gold-dim: #8a6f2e;
+    --gold-glow: rgba(201,168,76,0.12);
+    --text: #e8e0d0;
+    --text-dim: #8a8070;
+    --text-muted: #4a4640;
+    --green: #4a7c59;
+    --green-light: #6aaf7e;
+    --red: #8b4040;
+    --phase-color: var(--gold);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 2.5rem 2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .header-left h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.2rem, 3vw, 1.6rem);
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.01em;
+  }
+
+  .header-left p {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 2px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  .progress-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+  }
+
+  .progress-pill span {
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  /* ── LAYOUT ── */
+  .container {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 80px);
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: 80px;
+    height: calc(100vh - 80px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .sidebar-section {
+    padding: 0 1rem 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .sidebar-week-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    padding: 0 0.75rem;
+    margin-bottom: 0.5rem;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .day-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-radius: 8px;
+    text-align: left;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+  }
+
+  .day-btn:hover { background: var(--surface2); color: var(--text); }
+
+  .day-btn.active {
+    background: var(--gold-glow);
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+  }
+
+  .day-btn.completed .day-num { background: var(--green); color: white; }
+  .day-btn.active .day-num { background: var(--gold); color: var(--bg); }
+
+  .day-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  .day-label {
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  .day-label strong {
+    display: block;
+    font-weight: 500;
+    font-size: 0.75rem;
+  }
+
+  .day-label span {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main {
+    padding: 2rem 2.5rem;
+    max-width: 860px;
+  }
+
+  .day-view { display: none; animation: fadeIn 0.25s ease; }
+  .day-view.active { display: block; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .day-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .day-header-left .day-tag {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--gold-dim);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 0.5rem;
+  }
+
+  .day-header-left h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .day-header-left .day-sub {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-top: 0.4rem;
+  }
+
+  .complete-btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    white-space: nowrap;
+    letter-spacing: 0.03em;
+  }
+
+  .complete-btn:hover { border-color: var(--green); color: var(--green-light); }
+  .complete-btn.done { background: var(--green); border-color: var(--green); color: white; }
+
+  /* ── TIME BLOCKS ── */
+  .time-blocks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .time-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .time-block-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0.75rem;
+  }
+
+  .time-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot-gold { background: var(--gold); }
+  .dot-blue { background: #5b8dd9; }
+
+  .time-block-header .time-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .time-block h3 {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+
+  .time-block p {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ── RESOURCES ── */
+  .section-title {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 0.75rem;
+  }
+
+  .resources {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 2rem;
+  }
+
+  .resource-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-decoration: none;
+    transition: all 0.15s;
+    color: var(--text);
+  }
+
+  .resource-card:hover {
+    border-color: var(--gold-dim);
+    background: var(--gold-glow);
+    transform: translateX(3px);
+  }
+
+  .resource-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .icon-article { background: #1a2a3a; }
+  .icon-video { background: #2a1a1a; }
+  .icon-web { background: #1a2a1a; }
+  .icon-podcast { background: #2a1a2a; }
+
+  .resource-info { flex: 1; min-width: 0; }
+
+  .resource-info .r-title {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text);
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .resource-info .r-meta {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 1px;
+  }
+
+  .resource-tag {
+    font-size: 0.62rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+
+  .tag-read { background: #1a2a3a; color: #5b8dd9; }
+  .tag-watch { background: #2a1a1a; color: #c96b5b; }
+  .tag-explore { background: #1a2a1a; color: var(--green-light); }
+
+  /* ── NOTES PROMPT ── */
+  .notes-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .notes-box h4 {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .notes-box ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .notes-box ul li {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    padding-left: 1rem;
+    position: relative;
+  }
+
+  .notes-box ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--gold-dim);
+  }
+
+  /* ── NAV BUTTONS ── */
+  .day-nav {
+    display: flex;
+    gap: 10px;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .nav-btn {
+    padding: 9px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+
+  .nav-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .nav-btn.primary { background: var(--gold); border-color: var(--gold); color: var(--bg); font-weight: 500; }
+  .nav-btn.primary:hover { background: #d4b060; }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* ── OVERVIEW (Day 0) ── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .overview-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+
+  .overview-card .ov-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: var(--gold);
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .overview-card .ov-label {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+
+  .week-overview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  .week-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .week-row:last-child { border-bottom: none; }
+
+  .week-label-cell {
+    padding: 1rem 1.25rem;
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+  }
+
+  .week-label-cell span {
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .week-days-cell {
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .week-day-item {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    display: flex;
+    gap: 8px;
+  }
+
+  .week-day-item strong { color: var(--text); font-weight: 500; min-width: 45px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .container { grid-template-columns: 1fr; }
+    .sidebar {
+      position: static;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 1rem;
+    }
+    .sidebar-section { padding: 0; margin: 0; }
+    .sidebar-week-label { display: none; }
+    .day-btn { width: auto; padding: 6px 10px; }
+    .day-label strong { display: none; }
+    .day-label span { display: none; }
+    .main { padding: 1.5rem 1rem; }
+    .time-blocks { grid-template-columns: 1fr; }
+    .overview-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Phase 1 — Industry Study</h1>
+    <p>Ambient Scenting · Aromatherapy · Fragrance Market · 1–3 PM Daily</p>
+  </div>
+  <div class="header-right">
+    <div class="progress-pill">Day <span id="progress-current">0</span> of <span>15</span> — <span id="progress-pct">0%</span></div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar">
+    <div class="sidebar-week-label">Overview</div>
+    <div class="sidebar-section">
+      <button class="day-btn active" onclick="showDay('overview')" id="btn-overview">
+        <div class="day-num">⌂</div>
+        <div class="day-label"><strong>Overview</strong><span>Phase 1 plan</span></div>
+      </button>
+    </div>
+
+    <div class="sidebar-week-label" style="margin-top:0.5rem">Week 1 — Scent Marketing</div>
+    <div class="sidebar-section" id="week1-btns"></div>
+
+    <div class="sidebar-week-label">Week 2 — India Market</div>
+    <div class="sidebar-section" id="week2-btns"></div>
+
+    <div class="sidebar-week-label">Week 3 — Clients & Channels</div>
+    <div class="sidebar-section" id="week3-btns"></div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+
+    <!-- OVERVIEW -->
+    <div class="day-view active" id="view-overview">
+      <div class="day-header">
+        <div class="day-header-left">
+          <div class="day-tag">Phase 1 · 3 Weeks · 15 Sessions</div>
+          <h2>Industry Study Plan</h2>
+          <p class="day-sub">1–3 PM daily · 1 hour reading/watching · 1 hour notes</p>
+        </div>
+      </div>
+
+      <div class="overview-grid">
+        <div class="overview-card"><div class="ov-num">15</div><div class="ov-label">Study sessions</div></div>
+        <div class="overview-card"><div class="ov-num">30</div><div class="ov-label">Total hours</div></div>
+        <div class="overview-card"><div class="ov-num">3</div><div class="ov-label">Focus areas</div></div>
+      </div>
+
+      <p class="section-title">Week by week</p>
+      <div class="week-overview">
+        <div class="week-row">
+          <div class="week-label-cell"><span>Week 1</span></div>
+          <div class="week-days-cell">
+            <div class="week-day-item"><strong>Days 1–2</strong>What scent marketing is and how it works commercially</div>
+            <div class="week-day-item"><strong>Days 3–4</strong>Global players — ScentAir, Prolitec, Air Aroma</div>
+            <div class="week-day-item"><strong>Day 5</strong>How hotels and corporates buy scenting services</div>
+          </div>
+        </div>
+        <div class="week-row">
+          <div class="week-label-cell"><span>Week 2</span></div>
+          <div class="week-days-cell">
+            <div class="week-day-item"><strong>Days 6–7</strong>India wellness and aromatherapy market landscape</div>
+            <div class="week-day-item"><strong>Days 8–9</strong>JLL and CBRE vendor ecosystems — how procurement works</div>
+            <div class="week-day-item"><strong>Day 10</strong>Where Divine Aroma sits vs. competitors in India</div>
+          </div>
+        </div>
+        <div class="week-row">
+          <div class="week-label-cell"><span>Week 3</span></div>
+          <div class="week-days-cell">
+            <div class="week-day-item"><strong>Days 11–12</strong>D2C fragrance and wellness — online channels and brands</div>
+            <div class="week-day-item"><strong>Days 13–14</strong>Export market — EU/US aromatherapy import requirements</div>
+            <div class="week-day-item"><strong>Day 15</strong>Synthesis — write your own one-page market view</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="day-nav">
+        <button class="nav-btn primary" onclick="showDay(1)">Start Day 1 →</button>
+      </div>
+    </div>
+
+    <!-- DAYS INJECTED BY JS -->
+    <div id="days-container"></div>
+
+  </main>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const days = [
+  {
+    id: 1, week: 1,
+    title: "What Is Scent Marketing?",
+    sub: "Understanding the commercial use of fragrance in spaces",
+    block1: { label: "1:00 – 2:00 PM · Read & Watch", title: "Core concept + industry overview", desc: "Read the ScentAir overview and the Harvard Business Review piece on sensory marketing. Watch the Air Aroma explainer video. Understand: what problem does scent marketing solve and who pays for it?" },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "Write your understanding in your own words", desc: "Summarise: what is scent marketing, who buys it, who provides it, and what does a typical contract look like. One page maximum." },
+    resources: [
+      { type: "explore", icon: "🌐", title: "ScentAir — How It Works", meta: "ScentAir.com · Product & service overview", url: "https://scentair.com/scent-marketing/" },
+      { type: "read", icon: "📄", title: "Sensory Marketing — HBR", meta: "Harvard Business Review · Article", url: "https://hbr.org/2015/03/the-science-of-sensory-marketing" },
+      { type: "watch", icon: "▶", title: "Air Aroma — What We Do", meta: "YouTube · ~5 mins", url: "https://www.youtube.com/results?search_query=air+aroma+scent+marketing+explainer" },
+      { type: "explore", icon: "🌐", title: "Prolitec — Ambient Scenting", meta: "Prolitec.com · Company overview", url: "https://www.prolitec.com/" },
+    ],
+    notes: ["What specific problem does scent marketing solve for a hotel vs. a corporate office?", "What does a typical contract include — hardware, oil, service?", "Who is the decision maker — facilities, marketing, or the MD?", "What is a rough price range for a scenting subscription?"]
+  },
+  {
+    id: 2, week: 1,
+    title: "The Business Model",
+    sub: "How scenting companies make money — hardware, subscription, consumables",
+    block1: { label: "1:00 – 2:00 PM · Read & Watch", title: "Revenue models and margin structures", desc: "Study how ScentAir and Prolitec structure their pricing. Understand the difference between one-time hardware sale vs. subscription (AaaS). Read the Prolitec case studies to see real client implementations." },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "Map the business model", desc: "Draw out the revenue streams: hardware sale, oil consumable, service/maintenance, subscription. Which has the best margins and why? Apply this to what you know about Divine Aroma's model." },
+    resources: [
+      { type: "explore", icon: "🌐", title: "Prolitec Case Studies", meta: "Prolitec.com · Client implementations", url: "https://www.prolitec.com/case-studies/" },
+      { type: "read", icon: "📄", title: "ScentAir Pricing Model", meta: "ScentAir.com · How subscriptions work", url: "https://scentair.com/pricing/" },
+      { type: "watch", icon: "▶", title: "Scent Marketing Business Model Explained", meta: "YouTube · Search term", url: "https://www.youtube.com/results?search_query=scent+marketing+business+model+subscription" },
+      { type: "read", icon: "📄", title: "Air Aroma — Corporate Clients", meta: "Air-Aroma.com · B2B section", url: "https://www.air-aroma.com/scent-marketing" },
+    ],
+    notes: ["What % of revenue comes from recurring (oil) vs. one-time (hardware) in a mature scenting business?", "What is the customer lifetime value of one corporate scenting client?", "How does Divine Aroma's current model compare to global players?", "What is the risk if a client stops the subscription?"]
+  },
+  {
+    id: 3, week: 1,
+    title: "Global Players Deep Dive",
+    sub: "ScentAir, Prolitec, Air Aroma — how they built and scaled",
+    block1: { label: "1:00 – 2:00 PM · Read", title: "Study each company's founding story and scale", desc: "Read about ScentAir (US, largest player), Air Aroma (Australia, premium), and Prolitec (enterprise focus). Look for: when they were founded, how they scaled, what verticals they focus on, and what their India presence looks like." },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "Competitive landscape map", desc: "Create a simple table: Company | Founded | HQ | Key verticals | India presence | Pricing tier. Then note: what gap does Divine Aroma fill that these global players don't?" },
+    resources: [
+      { type: "explore", icon: "🌐", title: "ScentAir — About & History", meta: "ScentAir.com", url: "https://scentair.com/about/" },
+      { type: "explore", icon: "🌐", title: "Air Aroma — Brand Story", meta: "Air-Aroma.com", url: "https://www.air-aroma.com/about" },
+      { type: "read", icon: "📄", title: "Prolitec — Company Overview", meta: "Prolitec.com", url: "https://www.prolitec.com/company/" },
+      { type: "watch", icon: "▶", title: "Scent Marketing Industry Overview", meta: "YouTube · Industry documentary", url: "https://www.youtube.com/results?search_query=scent+marketing+industry+overview+2023" },
+    ],
+    notes: ["Which global player is most similar to what Divine Aroma is trying to become?", "Do any of them operate in India? If so, at what scale?", "What did they get right in their first 3 years that DA could replicate?", "What is the typical team size needed to manage 20 B2B clients?"]
+  },
+  {
+    id: 4, week: 1,
+    title: "The Science Behind Scent",
+    sub: "Why scent works — the psychology and neuroscience that makes clients pay",
+    block1: { label: "1:00 – 2:00 PM · Read", title: "Psychology of scent and buying behaviour", desc: "Read the academic and applied research on how scent affects mood, dwell time, and purchasing. This is the core sales argument you will use with clients. Understand it deeply." },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "Build your sales rationale", desc: "Write 3 different versions of the answer to 'why does scent matter for my business?' — one for a hotel GM, one for a corporate facilities manager, and one for a retail store owner. Each under 100 words." },
+    resources: [
+      { type: "read", icon: "📄", title: "The Smell Report — Social Issues Research Centre", meta: "SIRC.org · Comprehensive review", url: "http://www.sirc.org/publik/smell.pdf" },
+      { type: "read", icon: "📄", title: "Scent and Consumer Behaviour — ScienceDirect", meta: "Academic research summary", url: "https://www.sciencedirect.com/science/article/abs/pii/S0148296312001203" },
+      { type: "watch", icon: "▶", title: "How Smell Affects the Brain — Neuroscience", meta: "YouTube · TED/educational", url: "https://www.youtube.com/results?search_query=how+smell+affects+brain+neuroscience+ted" },
+      { type: "explore", icon: "🌐", title: "ScentAir — Science of Scent Marketing", meta: "ScentAir.com · Research section", url: "https://scentair.com/science-of-scent/" },
+    ],
+    notes: ["What is the specific stat on smell and emotional memory that you could use in a pitch?", "What does dwell time data show for scented vs. non-scented retail spaces?", "What scents are proven to increase productivity in offices?", "How do you counter a client who says 'we don't need this'?"]
+  },
+  {
+    id: 5, week: 1,
+    title: "How Corporates & Hotels Buy",
+    sub: "The procurement process — who decides, how long it takes, what they need",
+    block1: { label: "1:00 – 2:00 PM · Read & Watch", title: "B2B procurement in hospitality and real estate", desc: "Study how large MNCs and hotel chains make vendor decisions. Focus on: vendor registration, procurement committees, trial periods, and contract cycles. Read JLL's vendor portal overview." },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "Map the buyer journey", desc: "Draw the full journey from first contact to signed contract for: (a) a Google office via JLL, and (b) a Marriott hotel direct. Who are all the people involved? What does each stage require?" },
+    resources: [
+      { type: "explore", icon: "🌐", title: "JLL Supplier Portal", meta: "JLL.com · How to become a JLL vendor", url: "https://www.jll.co.in/en/about-jll/supplier-diversity" },
+      { type: "explore", icon: "🌐", title: "CBRE Vendor Registration", meta: "CBRE.com · Supplier information", url: "https://www.cbre.com/about-us/corporate-responsibility/supply-chain" },
+      { type: "watch", icon: "▶", title: "Enterprise B2B Sales Cycle Explained", meta: "YouTube · 30 Min to President's Club", url: "https://www.youtube.com/results?search_query=enterprise+b2b+sales+cycle+explained" },
+      { type: "read", icon: "📄", title: "How Hotels Make Vendor Decisions", meta: "Hospitality Net · Procurement article", url: "https://www.hospitalitynet.org/search/?q=vendor+procurement+hotels" },
+    ],
+    notes: ["How many people typically need to sign off on a vendor like Divine Aroma at a large MNC?", "What is the typical trial period before a full contract is signed?", "What documentation does JLL require from a registered vendor?", "What is the renewal risk — how easy is it for a client to switch scenting providers?"]
+  },
+  {
+    id: 6, week: 2,
+    title: "India Wellness Market",
+    sub: "Size, growth, segments, and who is winning in India right now",
+    block1: { label: "1:00 – 2:00 PM · Read", title: "India wellness industry landscape 2024–25", desc: "Study the India wellness market — size, CAGR, key segments (aromatherapy, home fragrance, wellness services). Find the most recent market reports. Understand what is driving growth and what the inflection points are." },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "Market sizing exercise", desc: "Estimate: how large is the India ambient scenting market today, and what could it be in 5 years? Use whatever numbers you found and build a simple bottoms-up estimate. Document your assumptions." },
+    resources: [
+      { type: "read", icon: "📄", title: "India Aromatherapy Market Report", meta: "Mordor Intelligence · Market sizing", url: "https://www.mordorintelligence.com/industry-reports/india-aromatherapy-market" },
+      { type: "read", icon: "📄", title: "India Wellness Market Overview", meta: "FICCI / Industry reports", url: "https://www.google.com/search?q=india+wellness+market+size+2024+CAGR+report" },
+      { type: "watch", icon: "▶", title: "India D2C Wellness Brands — How They Scaled", meta: "YouTube · Startup case studies", url: "https://www.youtube.com/results?search_query=india+d2c+wellness+brand+growth+2023+2024" },
+      { type: "explore", icon: "🌐", title: "Statista — India Fragrance Market", meta: "Statista.com · Data & charts", url: "https://www.statista.com/outlook/cmo/beauty-personal-care/fragrances/india" },
+    ],
+    notes: ["What is the estimated size of India's ambient scenting market vs. D2C fragrance?", "Which cities are the primary markets for B2B scenting?", "What consumer trends are driving corporate adoption of scenting?", "What is the CAGR and what does it imply for DA's FY27-30 projections?"]
+  },
+  {
+    id: 7, week: 2,
+    title: "Indian Competitors",
+    sub: "Who else is doing this in India — direct and indirect competition",
+    block1: { label: "1:00 – 2:00 PM · Research", title: "Map the Indian competitive landscape", desc: "Search for Indian companies doing ambient scenting, aromatherapy products, and fragrance services. Look at: Forest Essentials, Naso Profumi, Bloom & Grow, Stanze, Ascent Diffusers, any regional players. Understand their positioning, pricing, and channels." },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "Competitive positioning map", desc: "Place each competitor on a 2x2 grid: B2B vs B2C on one axis, mass vs. premium on the other. Where does Divine Aroma sit? What is the white space?" },
+    resources: [
+      { type: "explore", icon: "🌐", title: "Forest Essentials — Brand & Positioning", meta: "forestessentialsindia.com", url: "https://www.forestessentialsindia.com/" },
+      { type: "explore", icon: "🌐", title: "Naso Profumi India", meta: "Fragrance brand — positioning study", url: "https://www.google.com/search?q=naso+profumi+india+scent+marketing" },
+      { type: "watch", icon: "▶", title: "India Fragrance Startup Landscape", meta: "YouTube / YourStory", url: "https://www.youtube.com/results?search_query=india+fragrance+startup+ambient+scenting+2024" },
+      { type: "read", icon: "📄", title: "YourStory — India Wellness Startups", meta: "YourStory.com · Sector coverage", url: "https://yourstory.com/topic/wellness" },
+    ],
+    notes: ["Who is Divine Aroma's closest direct competitor in B2B ambient scenting in India?", "What is the pricing gap between DA and its nearest competitor?", "Is there any player that has cracked the JLL/CBRE vendor ecosystem already?", "What would it take to displace DA as a vendor once it is entrenched?"]
+  },
+  {
+    id: 8, week: 2,
+    title: "JLL Deep Dive",
+    sub: "Understanding Divine Aroma's largest client — 31% of revenue",
+    block1: { label: "1:00 – 2:00 PM · Research", title: "How JLL operates in India and manages vendors", desc: "Study JLL India — what they do, how large they are, which clients they manage facilities for, and how their vendor ecosystem works. JLL is 31% of DA's revenue. You need to understand this relationship deeply." },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "JLL risk and opportunity assessment", desc: "Write: (a) the three scenarios in which DA loses the JLL relationship, (b) what DA would need to do to deepen and expand within JLL, and (c) how many potential new clients exist within JLL's India portfolio." },
+    resources: [
+      { type: "explore", icon: "🌐", title: "JLL India — About & Services", meta: "JLL.co.in · Full overview", url: "https://www.jll.co.in/en/about-jll" },
+      { type: "explore", icon: "🌐", title: "JLL India Client Portfolio", meta: "JLL.co.in · Major clients", url: "https://www.jll.co.in/en/industries" },
+      { type: "read", icon: "📄", title: "JLL India Facilities Management", meta: "How JLL manages corporate campuses", url: "https://www.jll.co.in/en/services/facilities-management" },
+      { type: "watch", icon: "▶", title: "How Real Estate Management Firms Work", meta: "YouTube · FM industry overview", url: "https://www.youtube.com/results?search_query=facilities+management+company+how+it+works+india" },
+    ],
+    notes: ["How many corporate campuses does JLL manage in India?", "Which other vendors are in the JLL approved list — what category are they?", "Who at JLL actually makes the call to continue or end a vendor relationship?", "What is the realistic revenue potential if DA expanded to all JLL locations in India?"]
+  },
+  {
+    id: 9, week: 2,
+    title: "CBRE Deep Dive",
+    sub: "Understanding DA's second largest relationship — Wells Fargo and beyond",
+    block1: { label: "1:00 – 2:00 PM · Research", title: "CBRE India operations and Wells Fargo relationship", desc: "Study CBRE India — its size, key clients, and how it qualifies vendors. Then research Wells Fargo India's office operations. Understand: CBRE is the billing entity but Wells Fargo is the decision-maker. What does that mean for the relationship?" },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "CBRE expansion opportunity", desc: "CBRE manages facilities for dozens of MNCs in India. Write: what would DA need to do to get scenting into 5 more CBRE-managed locations beyond Wells Fargo? Who would you call, what would you show them?" },
+    resources: [
+      { type: "explore", icon: "🌐", title: "CBRE India — About", meta: "CBRE.co.in · Overview", url: "https://www.cbre.com/about-us/global-offices/asia-pacific/india" },
+      { type: "explore", icon: "🌐", title: "CBRE India — Facilities Management", meta: "Key service and client base", url: "https://www.cbre.co.in/en/services/facilities-management" },
+      { type: "read", icon: "📄", title: "Wells Fargo India Operations", meta: "Wells Fargo India presence overview", url: "https://www.google.com/search?q=wells+fargo+india+office+operations+bengaluru+hyderabad" },
+      { type: "watch", icon: "▶", title: "B2B Account Expansion Strategy", meta: "YouTube · Sales strategy", url: "https://www.youtube.com/results?search_query=b2b+account+expansion+strategy+enterprise" },
+    ],
+    notes: ["How many cities does CBRE manage facilities in across India?", "Which other Fortune 500 companies' India offices does CBRE manage?", "What is the process to get DA registered as a central CBRE vendor vs. location by location?", "What would one conversation at CBRE procurement level unlock vs. individual facility deals?"]
+  },
+  {
+    id: 10, week: 2,
+    title: "Competitive Position Summary",
+    sub: "Synthesising Week 2 — where DA stands and what the opportunity is",
+    block1: { label: "1:00 – 2:00 PM · Review & Synthesise", title: "Review your Week 2 notes and identify the key insight", desc: "Re-read all your notes from Days 6–9. Today is a synthesis day. No new material — just connecting the dots. The key question: what is the single biggest market opportunity that DA is positioned to capture?" },
+    block2: { label: "2:00 – 3:00 PM · Write", title: "One-page market opportunity brief", desc: "Write a one-page brief: (a) market size and growth, (b) DA's current position, (c) top 3 growth levers, (d) top 2 risks. This is the first version of your ownership thesis." },
+    resources: [
+      { type: "read", icon: "📄", title: "How to Write a Market Opportunity Brief", meta: "HBR · Strategic analysis framework", url: "https://hbr.org/2014/10/the-elements-of-value" },
+      { type: "watch", icon: "▶", title: "Strategic Market Analysis Framework", meta: "YouTube · Business strategy", url: "https://www.youtube.com/results?search_query=market+opportunity+analysis+framework+business" },
+    ],
+    notes: ["What is the one thing you now know about this market that you did not know 10 days ago?", "What assumption in DA's pitch document do you now agree with — and which do you question?", "If you had to grow DA's revenue 3x in 2 years, what is the single highest-leverage action?"]
+  },
+  {
+    id: 11, week: 3,
+    title: "D2C Fragrance — Online Channels",
+    sub: "How wellness and fragrance brands win online in India",
+    block1: { label: "1:00 – 2:00 PM · Research", title: "Study India D2C fragrance brands and their channels", desc: "Look at how brands like Nykaa, The Body Shop India, Juicy Chemistry, Plum, and fragrance-specific D2C brands operate online. Focus on: website, Amazon presence, performance marketing, Instagram, and repeat purchase rates." },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "D2C revival plan sketch", desc: "DA had 4.7% online revenue with zero marketing. Sketch a 90-day D2C reactivation plan: what would you turn on first, how much would you spend, and what would success look like in 90 days?" },
+    resources: [
+      { type: "explore", icon: "🌐", title: "Jungle Scout — Amazon India Fragrance", meta: "How aromatherapy products sell on Amazon IN", url: "https://www.junglescout.com/blog/amazon-india/" },
+      { type: "watch", icon: "▶", title: "D2C Brand Building in India — Case Studies", meta: "YouTube · Startup lessons", url: "https://www.youtube.com/results?search_query=d2c+brand+building+india+2024+case+study" },
+      { type: "read", icon: "📄", title: "Performance Marketing Basics — Google & Meta", meta: "Neil Patel · Beginner guide", url: "https://neilpatel.com/blog/performance-marketing/" },
+      { type: "explore", icon: "🌐", title: "Nykaa — How They Built Beauty D2C", meta: "Case study in Indian D2C", url: "https://www.google.com/search?q=nykaa+d2c+strategy+how+they+built+it" },
+    ],
+    notes: ["What is a realistic ROAS (return on ad spend) for an aromatherapy product on Instagram?", "Which platform — Amazon, own website, or Instagram — should DA prioritise first?", "What product category should lead the D2C revival — essential oils, incense, or diffusers?", "What is the average order value DA should target for D2C vs. current B2B?"]
+  },
+  {
+    id: 12, week: 3,
+    title: "Luxury Gifting & In-Store Retail",
+    sub: "The cross-sell and up-sell channels — hospitality and premium retail",
+    block1: { label: "1:00 – 2:00 PM · Research", title: "How luxury gifting and in-store retail works for premium brands", desc: "Study how premium wellness and fragrance brands place products in luxury retail (Nykaa Luxe, Shoppers Stop, premium organic stores). Understand the margin structure, minimum order quantities, and brand positioning requirements." },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "Gifting and retail opportunity for DA", desc: "DA already has Organic World (₹3.6L) and corporate gifting via Shashi (₹13L — pending clarification). Write: what would a legitimate corporate gifting vertical look like for DA under Imperial's ownership? Which Imperial clients could be the first 10 gifting customers?" },
+    resources: [
+      { type: "watch", icon: "▶", title: "How to Get Into Retail — Brand Placement Strategy", meta: "YouTube · Retail distribution guide", url: "https://www.youtube.com/results?search_query=how+to+get+products+into+retail+stores+india+strategy" },
+      { type: "read", icon: "📄", title: "Corporate Gifting Market India", meta: "Market overview and opportunity", url: "https://www.google.com/search?q=corporate+gifting+market+india+2024+size+growth" },
+      { type: "explore", icon: "🌐", title: "Rituals — Global Luxury Gifting Reference", meta: "rituals.com · How luxury wellness gifting works", url: "https://www.rituals.com" },
+      { type: "explore", icon: "🌐", title: "Nykaa Luxe — Premium Brand Requirements", meta: "How brands get into premium retail", url: "https://www.nykaa.com/luxe" },
+    ],
+    notes: ["What margin does a brand give up to get into a retail chain like Organic World or Nykaa?", "What is the MOQ (minimum order quantity) typically required by premium retail chains?", "What packaging and compliance standards are required for premium retail placement?", "Could Shashi Industries' distribution network accelerate DA's retail entry?"]
+  },
+  {
+    id: 13, week: 3,
+    title: "Export Market — EU & USA",
+    sub: "How to access international buyers for essential oils and incense",
+    block1: { label: "1:00 – 2:00 PM · Read", title: "Export compliance and market entry for India fragrance products", desc: "DA has export-compliant products (EU/USA). Study what is actually required to sell essential oils and incense into the EU and USA — IFRA compliance, MSDS, GC/MS certificates, customs codes, and distribution options." },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "Export opportunity assessment", desc: "Write: what are the 3 fastest routes to generating export revenue from DA's current product range? Who would the first 5 export customers be and how would you find them?" },
+    resources: [
+      { type: "read", icon: "📄", title: "IFRA Compliance Guide for Essential Oils", meta: "IFRA.org · Standards and requirements", url: "https://ifrafragrance.org/standards" },
+      { type: "read", icon: "📄", title: "India Export Documentation — DGFT", meta: "How to export from India", url: "https://www.dgft.gov.in/" },
+      { type: "watch", icon: "▶", title: "How to Export Essential Oils from India", meta: "YouTube · Practical export guide", url: "https://www.youtube.com/results?search_query=how+to+export+essential+oils+from+india+usa+europe" },
+      { type: "explore", icon: "🌐", title: "Spices Board India — Export Support", meta: "Government export facilitation", url: "https://www.indianspices.com/export" },
+    ],
+    notes: ["What certifications does DA already have that qualify it for EU/USA export?", "What is the margin on exported essential oils vs. domestic B2B sales?", "What is the fastest channel to find international buyers — trade shows, B2B platforms, direct outreach?", "What is the minimum shipment size that makes an export order financially viable?"]
+  },
+  {
+    id: 14, week: 3,
+    title: "Export — Distribution & Platforms",
+    sub: "Alibaba, Amazon Global, trade shows — how Indian fragrance brands reach global buyers",
+    block1: { label: "1:00 – 2:00 PM · Research", title: "B2B export channels and platforms", desc: "Study how Indian fragrance and wellness brands reach international buyers. Look at: IndiaMart, Alibaba, Amazon Global Selling, direct to retailer, and international trade shows (Beautyworld Middle East, Cosmoprof). Find 3 Indian companies that have successfully exported essential oils." },
+    block2: { label: "2:00 – 3:00 PM · Notes", title: "12-month export activation plan", desc: "Sketch a realistic plan: Month 1–3 setup, Month 4–6 first orders, Month 7–12 recurring. What does DA need to spend to get the first export order? What does success look like at 12 months?" },
+    resources: [
+      { type: "explore", icon: "🌐", title: "Amazon Global Selling India", meta: "How to sell internationally from India", url: "https://services.amazon.in/global-selling.html" },
+      { type: "explore", icon: "🌐", title: "IndiaMart — Essential Oil Exporters", meta: "B2B platform overview", url: "https://www.indiamart.com/proddetail/essential-oils.html" },
+      { type: "watch", icon: "▶", title: "How to Export on Alibaba from India", meta: "YouTube · Step by step", url: "https://www.youtube.com/results?search_query=alibaba+export+india+how+to+start+2024" },
+      { type: "read", icon: "📄", title: "Beautyworld Middle East — Trade Show", meta: "Key global fragrance trade show", url: "https://www.beautyworldme.com/" },
+    ],
+    notes: ["Which platform — Alibaba, Amazon Global, or direct — gives the best margin for essential oil exports?", "What is the cost of attending one international trade show and is it worth it at DA's current scale?", "Are there Indian incense exporters you could learn from or even partner with?", "Imperial already exports to 22+ countries — can that network immediately open export doors for DA?"]
+  },
+  {
+    id: 15, week: 3,
+    title: "Synthesis — Your Market View",
+    sub: "Write your own independent one-page thesis on the industry",
+    block1: { label: "1:00 – 2:00 PM · Review All Notes", title: "Read everything you have written over 14 days", desc: "Go through every note page from Days 1–14. Identify the 5 things that surprised you most, the 3 biggest risks you see, and the 2 things you are most excited about. Do not look at any new resources today." },
+    block2: { label: "2:00 – 3:00 PM · Write Your Thesis", title: "One-page ownership thesis — in your own words", desc: "Write: (1) what business you are buying, (2) why it will grow, (3) what you will do differently as the owner, (4) what could go wrong, and (5) what success looks like in 3 years. This is for you — honest, direct, no selling." },
+    resources: [
+      { type: "read", icon: "📄", title: "How to Write an Investment Thesis", meta: "Framework for thinking like an owner", url: "https://www.google.com/search?q=how+to+write+a+business+acquisition+thesis" },
+      { type: "read", icon: "📄", title: "First 100 Days as a Business Owner", meta: "What to prioritise after acquisition", url: "https://www.google.com/search?q=first+100+days+new+business+owner+acquisition+priorities" },
+    ],
+    notes: ["What do you know now that you wish you had known on Day 1?", "What single question about this industry do you still not have a good answer to?", "What is the one thing that would make you walk away from this acquisition?", "What is the one thing that excites you most about owning this company?"]
+  }
+];
+
+// ── COMPLETION STATE ──────────────────────────────────────────────────────────
+const completed = JSON.parse(localStorage.getItem('da-phase1-completed') || '[]');
+
+function markComplete(dayId) {
+  const btn = document.getElementById('complete-' + dayId);
+  if (!completed.includes(dayId)) {
+    completed.push(dayId);
+    localStorage.setItem('da-phase1-completed', JSON.stringify(completed));
+  }
+  btn.textContent = '✓ Completed';
+  btn.classList.add('done');
+  document.getElementById('btn-' + dayId)?.classList.add('completed');
+  updateProgress();
+}
+
+function updateProgress() {
+  const done = completed.length;
+  document.getElementById('progress-current').textContent = done;
+  document.getElementById('progress-pct').textContent = Math.round((done / 15) * 100) + '%';
+}
+
+// ── RENDER DAYS ───────────────────────────────────────────────────────────────
+function renderDays() {
+  const container = document.getElementById('days-container');
+
+  // Sidebar buttons
+  days.forEach(d => {
+    const weekId = d.week === 1 ? 'week1-btns' : d.week === 2 ? 'week2-btns' : 'week3-btns';
+    const section = document.getElementById(weekId);
+    const isDone = completed.includes(d.id);
+    const btn = document.createElement('button');
+    btn.className = 'day-btn' + (isDone ? ' completed' : '');
+    btn.id = 'btn-' + d.id;
+    btn.onclick = () => showDay(d.id);
+    btn.innerHTML = `<div class="day-num">${d.id}</div><div class="day-label"><strong>Day ${d.id}</strong><span>${d.title}</span></div>`;
+    section.appendChild(btn);
+  });
+
+  // Day views
+  days.forEach((d, i) => {
+    const isDone = completed.includes(d.id);
+    const resourcesHTML = d.resources.map(r => `
+      <a class="resource-card" href="${r.url}" target="_blank" rel="noopener">
+        <div class="resource-icon icon-${r.type === 'read' ? 'article' : r.type === 'watch' ? 'video' : r.type === 'podcast' ? 'podcast' : 'web'}">${r.icon}</div>
+        <div class="resource-info">
+          <span class="r-title">${r.title}</span>
+          <span class="r-meta">${r.meta}</span>
+        </div>
+        <span class="resource-tag tag-${r.type}">${r.type}</span>
+      </a>`).join('');
+
+    const notesHTML = d.notes.map(n => `<li>${n}</li>`).join('');
+
+    const div = document.createElement('div');
+    div.className = 'day-view';
+    div.id = 'view-' + d.id;
+    div.innerHTML = `
+      <div class="day-header">
+        <div class="day-header-left">
+          <div class="day-tag">Day ${d.id} · Week ${d.week} · 1:00–3:00 PM</div>
+          <h2>${d.title}</h2>
+          <p class="day-sub">${d.sub}</p>
+        </div>
+        <button class="complete-btn ${isDone ? 'done' : ''}" id="complete-${d.id}" onclick="markComplete(${d.id})">${isDone ? '✓ Completed' : 'Mark complete'}</button>
+      </div>
+
+      <div class="time-blocks">
+        <div class="time-block">
+          <div class="time-block-header"><div class="time-dot dot-gold"></div><span class="time-label">${d.block1.label}</span></div>
+          <h3>${d.block1.title}</h3>
+          <p>${d.block1.desc}</p>
+        </div>
+        <div class="time-block">
+          <div class="time-block-header"><div class="time-dot dot-blue"></div><span class="time-label">${d.block2.label}</span></div>
+          <h3>${d.block2.title}</h3>
+          <p>${d.block2.desc}</p>
+        </div>
+      </div>
+
+      <p class="section-title">Resources for today</p>
+      <div class="resources">${resourcesHTML}</div>
+
+      <div class="notes-box">
+        <h4>Notes prompt — answer these after your session</h4>
+        <ul>${notesHTML}</ul>
+      </div>
+
+      <div class="day-nav">
+        ${i > 0 ? `<button class="nav-btn" onclick="showDay(${d.id - 1})">← Day ${d.id - 1}</button>` : `<button class="nav-btn" onclick="showDay('overview')">← Overview</button>`}
+        ${i < days.length - 1 ? `<button class="nav-btn primary" onclick="showDay(${d.id + 1})">Day ${d.id + 1} →</button>` : `<button class="nav-btn primary" onclick="alert('Phase 1 complete! Tell your advisor to build Phase 2.')">Phase 1 Complete 🎉</button>`}
+      </div>`;
+    container.appendChild(div);
+  });
+
+  updateProgress();
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function showDay(id) {
+  document.querySelectorAll('.day-view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+
+  if (id === 'overview') {
+    document.getElementById('view-overview').classList.add('active');
+    document.getElementById('btn-overview').classList.add('active');
+  } else {
+    document.getElementById('view-' + id)?.classList.add('active');
+    document.getElementById('btn-' + id)?.classList.add('active');
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+renderDays();
+</script>
+</body>
+</html>
